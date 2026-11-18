@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: apex-signal-ai
+    runtime: python
+    plan: starter
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: TRADOWIX_EMAIL
+        sync: false
+      - key: TRADOWIX_PASSWORD
+        sync: false

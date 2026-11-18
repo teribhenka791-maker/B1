@@ -1,0 +1,934 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>APEX SIGNAL AI</title>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+:root{
+ --accent:#00ff83;
+ --accent-rgb:0,255,131;
+ --bg:#05080e;
+ --panel:#0c131e;
+ --border:#ffffff16;
+}
+
+*{margin:0;padding:0;box-sizing:border-box}
+
+body{
+ min-height:100vh;
+ background:var(--bg);
+ color:white;
+ font-family:Inter,Arial,sans-serif;
+ overflow-x:hidden;
+ transition:background 1s;
+}
+
+body.put{
+ --accent:#ff244e;
+ --accent-rgb:255,36,78;
+}
+
+body.wait{
+ --accent:#a9b4c4;
+ --accent-rgb:169,180,196;
+}
+
+/* FULL SCREEN ATMOSPHERE */
+
+.atmosphere{
+ position:fixed;
+ inset:0;
+ z-index:0;
+ overflow:hidden;
+ pointer-events:none;
+}
+
+.fog{
+ position:absolute;
+ width:180%;
+ height:150%;
+ left:-40%;
+ border-radius:50%;
+ filter:blur(75px);
+ opacity:0;
+ transition:opacity 1.5s;
+ mix-blend-mode:screen;
+}
+
+.fog-main{
+ background:
+ radial-gradient(ellipse at 25% 45%,rgba(var(--accent-rgb),.32),transparent 45%),
+ radial-gradient(ellipse at 75% 65%,rgba(var(--accent-rgb),.23),transparent 45%),
+ radial-gradient(ellipse at 50% 90%,rgba(var(--accent-rgb),.15),transparent 45%);
+ animation:fogMove 17s ease-in-out infinite alternate;
+ opacity:.9;
+}
+
+.fog-secondary{
+ background:
+ radial-gradient(ellipse at 30% 70%,rgba(var(--accent-rgb),.24),transparent 40%),
+ radial-gradient(ellipse at 70% 30%,rgba(220,235,255,.10),transparent 45%);
+ animation:fogMove2 23s ease-in-out infinite alternate;
+ opacity:.8;
+}
+
+.fog-white{
+ background:
+ radial-gradient(ellipse at 50% 50%,rgba(210,225,240,.16),transparent 55%),
+ radial-gradient(ellipse at 20% 80%,rgba(220,230,240,.12),transparent 45%);
+ animation:fogMove3 19s ease-in-out infinite alternate;
+ opacity:.8;
+}
+
+@keyframes fogMove{
+ from{transform:translate(-5%,-5%) scale(.9)}
+ to{transform:translate(8%,8%) scale(1.2)}
+}
+@keyframes fogMove2{
+ from{transform:translate(8%,5%) rotate(-5deg)}
+ to{transform:translate(-8%,-5%) rotate(5deg)}
+}
+@keyframes fogMove3{
+ from{transform:translate(-5%,8%) scale(1)}
+ to{transform:translate(6%,-8%) scale(1.25)}
+}
+
+/* AMBIENT GLOW */
+
+.ambient{
+ position:fixed;
+ inset:0;
+ pointer-events:none;
+ z-index:0;
+ background:radial-gradient(ellipse at 50% 45%,
+ rgba(var(--accent-rgb),.10),transparent 60%);
+ transition:background 1s;
+}
+
+/* LAYOUT */
+
+.container{
+ position:relative;
+ z-index:2;
+ max-width:1100px;
+ margin:auto;
+ padding:24px;
+}
+
+/* HEADER */
+
+header{
+ display:flex;
+ align-items:center;
+ justify-content:space-between;
+ padding:17px 20px;
+ border:1px solid var(--border);
+ background:#0b111bd9;
+ backdrop-filter:blur(20px);
+ border-radius:15px;
+}
+
+.logo{
+ font-size:22px;
+ font-weight:900;
+ letter-spacing:1px;
+}
+
+.logo span{color:var(--accent);transition:color 1s}
+
+.header-right{
+ display:flex;
+ align-items:center;
+ gap:15px;
+}
+
+.live{
+ font-size:10px;
+ color:#00ff83;
+ background:#00ff8310;
+ border:1px solid #00ff8335;
+ border-radius:30px;
+ padding:9px 13px;
+}
+
+.live i{
+ display:inline-block;
+ width:7px;height:7px;
+ border-radius:50%;
+ background:#00ff83;
+ margin-right:6px;
+ box-shadow:0 0 10px #00ff83;
+ animation:blink 1s infinite;
+}
+
+/* TOP STATS */
+
+.stats{
+ display:grid;
+ grid-template-columns:repeat(4,1fr);
+ gap:13px;
+ margin-top:18px;
+}
+
+.stat{
+ padding:18px;
+ border-radius:13px;
+ border:1px solid var(--border);
+ background:#0c131edb;
+ backdrop-filter:blur(18px);
+}
+
+.stat-label{
+ font-size:10px;
+ color:#7e8da1;
+ letter-spacing:1px;
+}
+
+.stat-value{
+ margin-top:10px;
+ font-size:19px;
+ font-weight:800;
+}
+
+.stat-value.accent{color:var(--accent)}
+
+/* MAIN GRID */
+
+.dashboard{
+ display:grid;
+ grid-template-columns:1fr 290px;
+ gap:17px;
+ margin-top:18px;
+}
+
+/* SIGNAL PANEL */
+
+.signal-panel{
+ border:1px solid var(--border);
+ border-radius:18px;
+ background:#0c131edb;
+ backdrop-filter:blur(20px);
+ padding:24px;
+ text-align:center;
+ overflow:hidden;
+ position:relative;
+}
+
+.signal-panel:before{
+ content:"";
+ position:absolute;
+ top:0;left:15%;
+ width:70%;
+ height:1px;
+ background:var(--accent);
+ box-shadow:0 0 25px 2px var(--accent);
+ opacity:.7;
+}
+
+.panel-heading{
+ display:flex;
+ justify-content:space-between;
+ align-items:center;
+}
+
+.panel-heading h2{
+ font-size:13px;
+ letter-spacing:2px;
+}
+
+.panel-heading span{
+ color:var(--accent);
+ font-size:10px;
+}
+
+/* ENERGY CIRCLE */
+
+.scene{
+ position:relative;
+ width:340px;
+ height:340px;
+ max-width:100%;
+ margin:5px auto;
+ display:grid;
+ place-items:center;
+ isolation:isolate;
+}
+
+.local-fog{
+ position:absolute;
+ width:320px;
+ height:320px;
+ border-radius:50%;
+ background:radial-gradient(circle,
+ rgba(var(--accent-rgb),.42),transparent 65%);
+ filter:blur(38px);
+ animation:energyPulse 3s ease-in-out infinite alternate;
+}
+
+@keyframes energyPulse{
+ from{transform:scale(.8);opacity:.4}
+ to{transform:scale(1.2);opacity:1}
+}
+
+.energy-ring{
+ position:absolute;
+ border-radius:50%;
+ border:1px solid transparent;
+}
+
+.ring1{
+ width:205px;height:205px;
+ border-top:2px solid var(--accent);
+ border-bottom:2px solid var(--accent);
+ box-shadow:0 0 15px var(--accent);
+ animation:spin 3s linear infinite;
+}
+
+.ring2{
+ width:245px;height:245px;
+ border-left:2px dashed var(--accent);
+ border-right:2px dashed var(--accent);
+ animation:spin 7s linear infinite reverse;
+ opacity:.8;
+}
+
+.ring3{
+ width:290px;height:290px;
+ border-top:1px dotted #ffffff77;
+ border-bottom:1px dotted #ffffff77;
+ animation:spin 15s linear infinite;
+}
+
+.ring4{
+ width:315px;height:315px;
+ border:1px solid rgba(var(--accent-rgb),.17);
+ animation:spin 25s linear infinite reverse;
+}
+
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ELECTRIC SHOCKS */
+
+#lightning{
+ position:absolute;
+ inset:0;
+ width:100%;
+ height:100%;
+ overflow:visible;
+ pointer-events:none;
+}
+
+.bolt{
+ fill:none;
+ stroke:var(--accent);
+ stroke-width:2;
+ stroke-linecap:round;
+ stroke-linejoin:round;
+ stroke-dasharray:150;
+ filter:drop-shadow(0 0 5px var(--accent))
+        drop-shadow(0 0 13px var(--accent));
+ animation:shock .5s linear forwards;
+}
+
+@keyframes shock{
+ 0%{opacity:0;stroke-dashoffset:150}
+ 20%{opacity:1}
+ 100%{opacity:0;stroke-dashoffset:0}
+}
+
+/* CENTER CORE */
+
+.core{
+ position:relative;
+ z-index:5;
+ width:150px;
+ height:150px;
+ border-radius:50%;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ flex-direction:column;
+ background:radial-gradient(circle at 35% 30%,#263746,#060b12 75%);
+ border:2px solid rgba(var(--accent-rgb),.7);
+ box-shadow:
+ 0 0 25px rgba(var(--accent-rgb),.3),
+ 0 0 65px rgba(var(--accent-rgb),.2),
+ inset 0 0 35px rgba(var(--accent-rgb),.15);
+ transition:all 1s;
+}
+
+.core:before{
+ content:"";
+ position:absolute;
+ inset:-9px;
+ border-radius:50%;
+ border:2px solid transparent;
+ border-top-color:var(--accent);
+ border-bottom-color:var(--accent);
+ animation:spin 2s linear infinite;
+}
+
+.core-label{
+ color:#8795a8;
+ font-size:9px;
+ letter-spacing:3px;
+}
+
+#signal{
+ font-size:29px;
+ font-weight:900;
+ margin-top:9px;
+ color:var(--accent);
+ text-shadow:0 0 20px var(--accent);
+}
+
+.core-status{
+ margin-top:8px;
+ font-size:9px;
+ color:#9baabd;
+ letter-spacing:1px;
+}
+
+/* PARTICLES */
+
+#particles{
+ position:absolute;
+ inset:0;
+ pointer-events:none;
+}
+
+.particle{
+ position:absolute;
+ width:3px;height:3px;
+ border-radius:50%;
+ background:var(--accent);
+ box-shadow:0 0 12px 3px var(--accent);
+ animation:particle var(--time) linear infinite;
+}
+
+@keyframes particle{
+ from{transform:rotate(0deg) translateX(var(--radius));opacity:0}
+ 30%{opacity:1}
+ to{transform:rotate(360deg) translateX(var(--radius));opacity:0}
+}
+
+/* SIGNAL DATA */
+
+.signal-data{
+ display:grid;
+ grid-template-columns:repeat(3,1fr);
+ gap:10px;
+}
+
+.data{
+ background:#080e17d9;
+ border:1px solid var(--border);
+ border-radius:11px;
+ padding:15px 5px;
+}
+
+.data small{
+ font-size:10px;
+ color:#8190a3;
+}
+
+.data h3{
+ margin-top:8px;
+ font-size:16px;
+ color:var(--accent);
+}
+
+/* GENERATE BUTTON */
+
+.generate{
+ width:100%;
+ padding:17px;
+ margin-top:20px;
+ border:1px solid var(--accent);
+ border-radius:11px;
+ background:rgba(var(--accent-rgb),.13);
+ color:var(--accent);
+ font-size:13px;
+ font-weight:900;
+ letter-spacing:1px;
+ cursor:pointer;
+ box-shadow:0 0 20px rgba(var(--accent-rgb),.12);
+ transition:.3s;
+}
+
+.generate:hover{
+ background:var(--accent);
+ color:#03080d;
+ box-shadow:0 0 35px var(--accent);
+}
+
+.generate:disabled{
+ opacity:.5;
+ cursor:wait;
+}
+
+/* RIGHT SETTINGS PANEL */
+
+.settings{
+ display:flex;
+ flex-direction:column;
+ gap:13px;
+}
+
+.box{
+ border:1px solid var(--border);
+ background:#0c131edb;
+ backdrop-filter:blur(20px);
+ padding:19px;
+ border-radius:15px;
+}
+
+.box-title{
+ font-size:11px;
+ font-weight:800;
+ letter-spacing:1.5px;
+ margin-bottom:17px;
+ color:#b8c5d6;
+}
+
+.field-label{
+ display:block;
+ font-size:10px;
+ color:#8190a3;
+ margin-bottom:10px;
+}
+
+select{
+ width:100%;
+ padding:14px 12px;
+ color:white;
+ background:#080e17;
+ border:1px solid #273447;
+ border-radius:9px;
+ outline:none;
+ font-size:12px;
+ cursor:pointer;
+}
+
+select:focus{border-color:var(--accent)}
+
+.field{margin-bottom:17px}
+#pairSearch{width:100%;margin:0 0 8px;padding:12px 13px;border-radius:9px;border:1px solid #26364a;background:#080f19;color:#fff;outline:none}
+#pairSearch:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(var(--accent-rgb),.12)}
+#pair{transition:border-color .2s,box-shadow .2s,transform .2s}
+#pair.pair-changed{border-color:var(--accent);box-shadow:0 0 18px rgba(var(--accent-rgb),.25);transform:translateY(-2px)}
+#analysisReasons{margin-top:12px;color:#9baabd;font-size:11px;line-height:1.7;text-align:left}
+#analysisReasons b{color:var(--accent)}
+.field:last-child{margin-bottom:0}
+
+/* SYSTEM STATUS */
+
+.system-row{
+ display:flex;
+ align-items:center;
+ justify-content:space-between;
+ padding:12px 0;
+ border-bottom:1px solid var(--border);
+ font-size:11px;
+ color:#8795a8;
+}
+
+.system-row:last-child{border:0}
+
+.ok{color:#00ff83}
+.accent-text{color:var(--accent)}
+
+/* FOOTER */
+
+footer{
+ text-align:center;
+ padding:25px 0 10px;
+ font-size:10px;
+ color:#647387;
+}
+
+/* MOBILE */
+
+@media(max-width:760px){
+ .container{padding:14px}
+ .dashboard{grid-template-columns:1fr}
+ .settings{display:grid;grid-template-columns:1fr 1fr}
+ .stats{grid-template-columns:repeat(2,1fr)}
+}
+
+@media(max-width:420px){
+ .settings{grid-template-columns:1fr}
+ .scene{transform:scale(.88);margin:-12px auto}
+ .signal-panel{padding:15px 9px}
+ .stat{padding:13px}
+ .stat-value{font-size:16px}
+ .logo{font-size:18px}
+}
+
+/* CHART + API DIAGNOSTICS */
+.chart-section{margin-top:18px;padding:20px;border:1px solid var(--border);border-radius:18px;background:#0c131ef2;backdrop-filter:blur(20px)}
+.chart-topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px}
+#chartTitle{font-size:14px;font-weight:800;color:white}
+.chart-back,.chart-action{border:1px solid var(--accent);border-radius:9px;padding:12px 15px;background:rgba(var(--accent-rgb),.12);color:var(--accent);font-size:10px;font-weight:900;letter-spacing:.5px;cursor:pointer}
+.chart-controls{display:flex;flex-wrap:wrap;gap:9px;margin-bottom:14px}.chart-action:disabled{opacity:.4;cursor:not-allowed}.chart-action.secondary{border-color:#344257;color:#b8c5d6;background:#111b29}
+.chart-status-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:12px}.chart-status-card{padding:13px;background:#080e17;border:1px solid var(--border);border-radius:10px;min-width:0}.chart-status-card small,.chart-toolbar small{display:block;color:#8190a3;font-size:9px;margin-bottom:7px}.chart-status-card b{font-size:11px;color:#a9b4c4;overflow-wrap:anywhere}
+.api-message{padding:12px;border-radius:9px;background:#111b29;color:#aebbd0;font-size:11px;line-height:1.6;margin-bottom:14px;overflow-wrap:anywhere}.api-message.good{border:1px solid #00ff8344;color:#00ff83}.api-message.bad{border:1px solid #ff244e55;color:#ff8ca0}
+.chart-toolbar{display:flex;align-items:end;gap:14px;flex-wrap:wrap;margin-bottom:12px}.chart-toolbar>div{min-width:145px}.chart-toolbar select{padding:10px 12px}.chart-toolbar span{display:block;padding:11px 0;color:var(--accent);font-size:12px;font-weight:800}
+.chart-wrap{height:390px;position:relative;background:#070c13;border:1px solid #263447;border-radius:12px;overflow:hidden}.chart-wrap canvas{width:100%;height:100%;display:block}.chart-wrap #chartEmpty{position:absolute;inset:0;display:grid;place-items:center;padding:20px;text-align:center;color:#8190a3;font-size:12px;pointer-events:none}.chart-footnote{padding-top:11px;color:#8190a3;font-size:10px;line-height:1.5}
+@media(max-width:600px){.chart-section{padding:12px}.chart-status-grid{grid-template-columns:repeat(2,1fr)}.chart-wrap{height:300px}.chart-controls>*{flex:1 1 100%}.chart-back{padding:10px}.chart-topbar{align-items:flex-start}}
+
+</style>
+</head>
+
+<body class="wait">
+
+<!-- FULL SCREEN FOG -->
+<div class="atmosphere">
+ <div class="fog fog-main"></div>
+ <div class="fog fog-secondary"></div>
+ <div class="fog fog-white"></div>
+</div>
+<div class="ambient"></div>
+
+<div class="container">
+
+<header>
+ <div class="logo">APEX <span>SIGNAL AI</span></div>
+ <div class="header-right">
+  <div class="live"><i></i> LIVE SYSTEM</div>
+ </div>
+</header>
+
+<!-- TOP STATISTICS -->
+
+<div class="stats">
+
+ <div class="stat">
+  <div class="stat-label">AI ENGINE</div>
+  <div class="stat-value accent">READY</div>
+ </div>
+
+ <div class="stat">
+  <div class="stat-label">LAST SIGNAL</div>
+  <div class="stat-value" id="lastSignal">NONE</div>
+ </div>
+
+ <div class="stat">
+  <div class="stat-label">CURRENT PAIR</div>
+  <div class="stat-value" id="topPair">EUR/USD</div>
+ </div>
+
+ <div class="stat">
+  <div class="stat-label">SIGNAL MODE</div>
+  <div class="stat-value">REAL DATA</div>
+ </div>
+
+</div>
+
+<!-- DASHBOARD -->
+
+<div class="dashboard">
+
+<!-- LEFT SIGNAL AREA -->
+
+<div class="signal-panel">
+
+ <div class="panel-heading">
+  <h2>AI SIGNAL CENTER</h2>
+  <span id="marketState">● STANDBY</span>
+ </div>
+
+ <div class="scene">
+
+  <div class="local-fog"></div>
+
+  <div class="energy-ring ring1"></div>
+  <div class="energy-ring ring2"></div>
+  <div class="energy-ring ring3"></div>
+  <div class="energy-ring ring4"></div>
+
+  <svg id="lightning" viewBox="0 0 340 340"></svg>
+  <div id="particles"></div>
+
+  <div class="core">
+   <div class="core-label">DIRECTION</div>
+   <div id="signal">WAIT</div>
+   <div class="core-status" id="coreStatus">CONNECT API FIRST</div>
+  </div>
+
+ </div>
+
+ <div class="signal-data">
+
+  <div class="data">
+   <small>CONFIDENCE</small>
+   <h3 id="confidence">--%</h3>
+  </div>
+
+  <div class="data">
+   <small>ENTRY</small>
+   <h3 id="entry">--</h3>
+  </div>
+
+  <div class="data">
+   <small>EXPIRY</small>
+   <h3 id="expiry">--</h3>
+  </div>
+
+ </div>
+ <div id="analysisReasons">Connect TradoWix and load real candles to generate a signal.</div>
+
+ <button class="generate" id="generate">
+  ⚡ GENERATE AI SIGNAL
+ </button>
+
+</div>
+
+<!-- RIGHT CONTROL AREA -->
+
+<div class="settings">
+
+ <div class="box">
+  <div class="box-title">MARKET SETTINGS</div>
+
+   <div class="field"><label class="field-label">MARKET TYPE</label><select id="marketType"><option value="live">LIVE MARKET</option><option value="otc">OTC MARKET</option></select></div>
+
+  <div class="field">
+   <label class="field-label">CURRENCY PAIR</label>
+   <input id="pairSearch" type="search" placeholder="Search all available pairs..." autocomplete="off">
+   <select id="pair"><option value="">Connect API to load pairs</option></select>
+  </div>
+
+  <div class="field">
+   <label class="field-label">TIMEFRAME</label>
+   <select id="timeframe">
+    <option value="30 Seconds">30 Seconds</option>
+    <option value="1 Minute">1 Minute</option>
+   </select>
+  </div>
+ </div>
+
+ <div class="box">
+  <div class="box-title">SYSTEM MONITOR</div>
+
+  <div class="system-row">
+   <span>Visual Engine</span>
+   <span class="ok">ACTIVE</span>
+  </div>
+
+  <div class="system-row">
+   <span>Electric FX</span>
+   <span class="ok">ACTIVE</span>
+  </div>
+
+  <div class="system-row">
+   <span>Fog Engine</span>
+   <span class="ok">ACTIVE</span>
+  </div>
+
+  <div class="system-row">
+   <span>Signal Engine</span>
+   <span class="accent-text">REAL DATA</span>
+  </div>
+ </div>
+
+</div>
+
+ </div>
+
+ <div style="margin-top:16px;text-align:center"><button id="openChart" class="chart-action" type="button">OPEN CHART / API TEST</button></div>
+
+ <section id="chartSection" class="chart-section" hidden>
+  <div class="chart-topbar">
+   <div><div class="box-title" style="margin-bottom:6px">MARKET CHART & API DIAGNOSTICS</div><div id="chartTitle">Select market and pair</div></div>
+   <button class="chart-back" id="backFromChart" type="button">← BACK</button>
+  </div>
+  <div class="chart-controls">
+   <button id="connectApi" class="chart-action" type="button">CONNECT TRADOWIX API</button>
+   <button id="loadCandles" class="chart-action" type="button" disabled>LOAD 1,000 CANDLES</button>
+   <button id="refreshAssets" class="chart-action secondary" type="button">REFRESH PAIRS</button>
+  </div>
+  <div class="chart-status-grid">
+   <div class="chart-status-card"><small>API AUTHENTICATION</small><b id="apiAuthState">NOT TESTED</b></div>
+   <div class="chart-status-card"><small>INSTRUMENTS</small><b id="assetState">NOT LOADED</b></div>
+   <div class="chart-status-card"><small>HISTORICAL CANDLES</small><b id="candleState">0 / 1,000</b></div>
+   <div class="chart-status-card"><small>LIVE TICK</small><b id="tickState">WAITING</b></div>
+  </div>
+  <div id="apiMessage" class="api-message">Press CONNECT TRADOWIX API to test authentication. Credentials are read only from private server environment variables.</div>
+  <div class="chart-toolbar">
+   <div><small>PAIR</small><select id="chartPair"><option value="">Connect API first</option></select></div>
+   <div><small>TIMEFRAME</small><select id="chartTimeframe"><option value="30">30 SECONDS</option><option value="60" selected>1 MINUTE</option></select></div>
+   <div><small>MARKET</small><span id="chartMarketLabel">LIVE</span></div>
+  </div>
+  <div class="chart-wrap"><canvas id="marketChart" width="1200" height="520"></canvas><div id="chartEmpty">Connect the API, select a pair, then load historical candles.</div></div>
+  <div class="chart-footnote" id="chartFootnote">No API connection has been tested yet.</div>
+ </section>
+
+ <footer>
+  APEX SIGNAL AI · ADVANCED TRADING INTERFACE · SIGNAL-ONLY MODE
+ </footer>
+
+</div>
+
+<script>
+const body=document.body;
+const svg=document.getElementById("lightning");
+const particles=document.getElementById("particles");
+const signal=document.getElementById("signal");
+const button=document.getElementById("generate");
+let currentMode="wait";
+function setMode(mode){
+ currentMode=mode; body.className=mode;
+ const colors={call:"#00ff83",put:"#ff244e",wait:"#a9b4c4"};
+ const rgb={call:"0,255,131",put:"255,36,78",wait:"169,180,196"};
+ document.documentElement.style.setProperty("--accent",colors[mode]);
+ document.documentElement.style.setProperty("--accent-rgb",rgb[mode]);
+ signal.className=mode;
+}
+function lightning(){
+ const angle=Math.random()*Math.PI*2,radius=75+Math.random()*70;
+ const x=170+Math.cos(angle)*radius,y=170+Math.sin(angle)*radius;
+ let d="M 170 170",px=170,py=170;
+ for(let i=0;i<5;i++){px+=(x-170)/5+(Math.random()-.5)*28;py+=(y-170)/5+(Math.random()-.5)*28;d+=` L ${px} ${py}`;}
+ const path=document.createElementNS("http://www.w3.org/2000/svg","path");
+ path.setAttribute("d",d);path.setAttribute("class","bolt");svg.appendChild(path);setTimeout(()=>path.remove(),600);
+}
+setInterval(lightning,100);
+function createParticle(){
+ const p=document.createElement("div");p.className="particle";p.style.left="50%";p.style.top="50%";
+ p.style.setProperty("--radius",90+Math.random()*75+"px");p.style.setProperty("--time",2+Math.random()*4+"s");
+ p.style.animationDelay=-Math.random()*4+"s";particles.appendChild(p);setTimeout(()=>p.remove(),6500);
+}
+setInterval(createParticle,100);
+button.addEventListener("click",async()=>{
+ const pair=document.getElementById("pair").value;
+ if(!pair){document.getElementById("coreStatus").textContent="CONNECT API FIRST";return;}
+ button.disabled=true;button.textContent="⚡ ANALYZING REAL CANDLES...";
+ signal.textContent="...";document.getElementById("coreStatus").textContent="PROCESSING REAL DATA";
+ document.getElementById("marketState").textContent="● ANALYZING";
+ document.getElementById("confidence").textContent="--%";
+ document.getElementById("entry").textContent="--";document.getElementById("expiry").textContent="--";
+ try{
+  const tf=document.getElementById("timeframe").value==="30 Seconds"?30:60;
+  const response=await fetch(`/api/signal?symbol=${encodeURIComponent(pair)}&timeframe=${tf}`);
+  const data=await response.json();if(!response.ok)throw new Error(data.detail||"Signal analysis failed");
+  const mode=data.signal.toLowerCase();setMode(mode);signal.textContent=data.signal;
+  document.getElementById("coreStatus").textContent=mode==="call"?"BULLISH SETUP":"BEARISH SETUP";
+  document.getElementById("marketState").textContent=mode==="call"?"● BULLISH":"● BEARISH";
+  document.getElementById("lastSignal").textContent=data.signal;
+  document.getElementById("confidence").textContent=data.confidence+"%";
+  document.getElementById("entry").textContent=Number(data.entry_price).toPrecision(7);
+  document.getElementById("expiry").textContent=tf+" SECONDS";
+  document.getElementById("analysisReasons").innerHTML="<b>REAL CANDLE ANALYSIS</b><br>"+data.reasons.map(x=>"• "+x).join("<br>")+"<br><small>"+data.candles_used+" candles · "+data.confidence_note+"</small>";
+ }catch(error){setMode("wait");signal.textContent="--";document.getElementById("coreStatus").textContent="DATA / API ERROR";document.getElementById("marketState").textContent="● STANDBY";document.getElementById("analysisReasons").textContent=error.message;}
+ finally{button.disabled=false;button.textContent="⚡ GENERATE AI SIGNAL";}
+});
+document.getElementById("pair").addEventListener("change",e=>{
+ document.getElementById("topPair").textContent=e.target.value||"--";
+ e.target.classList.remove("pair-changed");void e.target.offsetWidth;e.target.classList.add("pair-changed");
+});
+</script>
+
+
+<script>
+// Chart diagnostics are served by the same-origin Python backend.
+(() => {
+ const $ = id => document.getElementById(id);
+ const section = $('chartSection');
+ const marketType = $('marketType');
+ const chartPair = $('chartPair');
+ const timeframe = $('chartTimeframe');
+ const openChart = $('openChart');
+ let candles = [], selectedSymbol = '', pollHandle = null, marketAssets = [];
+ const setStatus = (id, value, color) => { const el=$(id); el.textContent=value; if(color) el.style.color=color; };
+ const message = (text, kind='') => { const el=$('apiMessage'); el.textContent=text; el.className='api-message '+kind; };
+ const api = async (url, options={}) => {
+   const response = await fetch(url, {headers:{'Content-Type':'application/json'}, ...options});
+   const data = await response.json().catch(()=>({detail:'Invalid server response'}));
+   if(!response.ok) throw new Error(data.detail || `HTTP ${response.status}`);
+   return data;
+ };
+ function timeframeSeconds(){ return Number(timeframe.value); }
+ async function loadPairs(){
+   const market=marketType.value;
+   $('chartMarketLabel').textContent=market.toUpperCase();
+   const data=await api(`/api/assets?market=${market}`);
+   marketAssets=data.assets||[];
+   chartPair.innerHTML='';
+   data.assets.forEach(asset=>{ const o=document.createElement('option'); o.value=asset.symbol; o.textContent=asset.symbol+(asset.is_open?'':' · CLOSED'); chartPair.appendChild(o); });
+   setStatus('assetState',`${data.count} PAIRS`,data.count?'#00ff83':'#ffb45c');
+   if(data.count){ selectedSymbol=chartPair.value; $('loadCandles').disabled=false; }
+   else { $('loadCandles').disabled=true; selectedSymbol=''; }
+   const mainPair=$('pair'); if(mainPair){ mainPair.innerHTML=''; data.assets.forEach(asset=>{const o=document.createElement('option');o.value=asset.symbol;o.textContent=asset.symbol+' · '+(asset.is_open?'OPEN':'CLOSED');o.disabled=!asset.is_open||!asset.is_active;mainPair.appendChild(o);}); if(data.count){mainPair.value=data.assets.find(a=>a.is_open&&a.is_active)?.symbol||data.assets[0].symbol;$('topPair').textContent=mainPair.value;} }
+   $('pairSearch').value='';
+   return data.count;
+ }
+ async function refreshStatus(){
+   const s=await api('/api/status');
+   setStatus('apiAuthState',s.authenticated?'AUTHENTICATED':'NOT CONNECTED',s.authenticated?'#00ff83':'#ffb45c');
+   setStatus('assetState',s.assets_loaded?`${s.instrument_count} LOADED`:'NOT LOADED',s.assets_loaded?'#00ff83':'#ffb45c');
+   $('loadCandles').disabled=!s.authenticated;
+   return s;
+ }
+ openChart.addEventListener('click',()=>{ section.hidden=false; section.scrollIntoView({behavior:'smooth',block:'start'}); $('chartMarketLabel').textContent=marketType.value.toUpperCase(); });
+ $('backFromChart').addEventListener('click',()=>{section.hidden=true; if(pollHandle){clearInterval(pollHandle);pollHandle=null;}});
+ $('connectApi').addEventListener('click',async()=>{
+   const btn=$('connectApi'); btn.disabled=true; btn.textContent='CONNECTING...';
+   message('Connecting to TradoWix and authenticating. This can take several seconds...');
+   try{ const s=await api('/api/connect',{method:'POST',body:JSON.stringify({confirm:true})});
+     await refreshStatus(); message(s.message||'Authentication successful.', 'good');
+     const count=await loadPairs(); $('chartTitle').textContent=`${marketType.value.toUpperCase()} MARKET · ${count} PAIRS AVAILABLE`;
+   }catch(e){ setStatus('apiAuthState','FAILED','#ff5575'); message(e.message,'bad'); }
+   finally{btn.disabled=false;btn.textContent='CONNECT TRADOWIX API';}
+ });
+ $('refreshAssets').addEventListener('click',async()=>{try{await refreshStatus();const n=await loadPairs();message(`Pair list refreshed: ${n} ${marketType.value.toUpperCase()} instruments returned by the API.`,'good');}catch(e){message(e.message,'bad');}});
+ marketType.addEventListener('change',async()=>{ $('chartMarketLabel').textContent=marketType.value.toUpperCase(); if(section.hidden)return; try{const n=await loadPairs();$('chartTitle').textContent=`${marketType.value.toUpperCase()} MARKET · ${n} PAIRS AVAILABLE`;}catch(e){message(e.message,'bad');} });
+ chartPair.addEventListener('change',()=>{selectedSymbol=chartPair.value;const p=$('pair');if(p.querySelector(`option[value=\"${CSS.escape(selectedSymbol)}\"]`))p.value=selectedSymbol;$('topPair').textContent=selectedSymbol;});
+ $('pairSearch').addEventListener('input',e=>{const q=e.target.value.trim().toLowerCase();const p=$('pair'),old=p.value;const matches=marketAssets.filter(a=>(a.symbol+' '+a.name+' '+a.display_name).toLowerCase().includes(q));p.innerHTML='';matches.forEach(a=>{const o=document.createElement('option');o.value=a.symbol;o.textContent=a.symbol+' · '+(a.is_open?'OPEN':'CLOSED');o.disabled=!a.is_open||!a.is_active;p.appendChild(o);});if(matches.some(a=>a.symbol===old))p.value=old;else if(matches.length){p.value=matches.find(a=>a.is_open&&a.is_active)?.symbol||matches[0].symbol;p.dispatchEvent(new Event('change'));}});
+ function drawChart(){
+   const canvas=$('marketChart'),ctx=canvas.getContext('2d');
+   const rect=canvas.getBoundingClientRect(); const dpr=window.devicePixelRatio||1;
+   canvas.width=Math.max(1,Math.floor(rect.width*dpr)); canvas.height=Math.max(1,Math.floor(rect.height*dpr));
+   ctx.setTransform(dpr,0,0,dpr,0,0); const w=rect.width,h=rect.height;
+   ctx.clearRect(0,0,w,h); ctx.fillStyle='#070c13';ctx.fillRect(0,0,w,h);
+   if(!candles.length){$('chartEmpty').style.display='grid';return;}$('chartEmpty').style.display='none';
+   const pad={l:12,r:64,t:18,b:28}, cw=w-pad.l-pad.r,ch=h-pad.t-pad.b;
+   const lo=Math.min(...candles.map(c=>c.low)),hi=Math.max(...candles.map(c=>c.high));const span=(hi-lo)||1;const min=lo-span*.06,max=hi+span*.06;
+   const y=v=>pad.t+(max-v)/(max-min)*ch;
+   ctx.strokeStyle='#1d2a3a';ctx.lineWidth=1;ctx.fillStyle='#8190a3';ctx.font='10px Inter,Arial';
+   for(let i=0;i<=5;i++){const yy=pad.t+ch*i/5;ctx.beginPath();ctx.moveTo(pad.l,yy);ctx.lineTo(w-pad.r,yy);ctx.stroke();const val=max-(max-min)*i/5;ctx.fillText(val.toFixed(5),w-pad.r+7,yy+3);}
+   const step=cw/candles.length,body=Math.max(2,Math.min(10,step*.62));
+   candles.forEach((c,i)=>{const x=pad.l+i*step+step/2,up=c.close>=c.open,color=up?'#00d982':'#ff4568';ctx.strokeStyle=color;ctx.fillStyle=color;ctx.beginPath();ctx.moveTo(x,y(c.high));ctx.lineTo(x,y(c.low));ctx.stroke();const top=y(Math.max(c.open,c.close)),bottom=y(Math.min(c.open,c.close));ctx.fillRect(x-body/2,top,body,Math.max(1,bottom-top));});
+   ctx.fillStyle='#8190a3';ctx.fillText(`${candles.length} candles · ${timeframeSeconds()}s`,pad.l,h-8);
+ }
+ async function loadChart(){
+   if(!chartPair.value){message('No pair selected. Connect the API and load instruments first.','bad');return;}
+   selectedSymbol=chartPair.value;const btn=$('loadCandles');btn.disabled=true;btn.textContent='FETCHING HISTORY...';
+   $('chartTitle').textContent=`${selectedSymbol} · ${timeframeSeconds()} SECOND CHART`;
+   setStatus('candleState','FETCHING...','#ffb45c');setStatus('tickState','SUBSCRIBING','#ffb45c');
+   try{
+     const data=await api(`/api/chart?symbol=${encodeURIComponent(selectedSymbol)}&timeframe=${timeframeSeconds()}&limit=1000`);
+     candles=data.candles||[];drawChart();
+     setStatus('candleState',`${data.received} / ${data.requested}`,data.received?'#00ff83':'#ffb45c');
+     setStatus('tickState',data.stream_subscribed?'SUBSCRIBED':'NOT SUBSCRIBED',data.stream_subscribed?'#00ff83':'#ffb45c');
+     $('chartFootnote').textContent=data.note||'Historical data loaded.';
+     message(`Received ${data.received} historical candles for ${data.symbol}. Live tick subscription requested.`,data.received?'good':'bad');
+     if(pollHandle)clearInterval(pollHandle);pollHandle=setInterval(pollTick,2000);
+   }catch(e){setStatus('candleState','FAILED','#ff5575');message(e.message,'bad');}
+   finally{btn.disabled=false;btn.textContent='LOAD 1,000 CANDLES';}
+ }
+ async function pollTick(){if(!selectedSymbol)return;try{const d=await api(`/api/ticks/${encodeURIComponent(selectedSymbol)}`);if(d.tick){const price=Number(d.tick.price),ts=Number(d.tick.timestamp),bucket=Math.floor(ts/timeframeSeconds())*timeframeSeconds();setStatus('tickState',price.toString(), '#00ff83');if(candles.length){const last=candles[candles.length-1];if(bucket>last.time){candles.push({time:bucket,open:last.close,high:Math.max(last.close,price),low:Math.min(last.close,price),close:price});if(candles.length>1000)candles.shift();}else if(bucket===last.time){last.high=Math.max(last.high,price);last.low=Math.min(last.low,price);last.close=price;}drawChart();}$('chartFootnote').textContent=`Live tick ${price} · ${new Date(ts*1000).toLocaleTimeString()}. Candle updates are built from the received price feed.`;}}catch(e){setStatus('tickState','FEED ERROR','#ff5575');}}
+ $('loadCandles').addEventListener('click',loadChart);timeframe.addEventListener('change',()=>{if(candles.length)message('Timeframe changed. Load candles again to fetch the selected timeframe.');});
+ window.addEventListener('resize',()=>{if(candles.length)drawChart();});
+ // Do not auto-connect; user explicitly starts the API test from the chart section.
+ refreshStatus().catch(()=>{});
+})();
+</script>
+
+</body>
+</html>
